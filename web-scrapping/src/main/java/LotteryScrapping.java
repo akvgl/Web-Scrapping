@@ -2,6 +2,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.w3c.dom.ls.LSOutput;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -25,6 +27,7 @@ public class LotteryScrapping
     static String thirdPrizePTagOrHTagFirst = "p";
     static String thirdPrizeSiblingSelector = "h4";
     static boolean isSreeShakthi =  false;
+    static boolean isFiftyFifty = false;
 
     // global Arrays for Prize details....
     static  ArrayList<String> consolationPrizeNumbers = new ArrayList<>();
@@ -48,7 +51,7 @@ public class LotteryScrapping
         }
 
         url = URLSTR + NAME + CODE + DATE + ".php";
-
+        
         assignPTagIndex(NAME);
         connectToUrl(url);
         searchForPrize();
@@ -125,6 +128,13 @@ public class LotteryScrapping
                 thirdPrizePTagOrHTagContains = ":contains(4th Prize)";
                 isSreeShakthi = true;
                 break;
+            case "fifty-fifty":
+                pTagIndex = 11;
+                thirdPrizePTagOrHTag = "h3";
+                thirdPrizePTagOrHTagContains = ":contains(4th Prize)";
+                isSreeShakthi = true;
+                isFiftyFifty = true;
+                break;
             default:
                 break;
         }
@@ -143,6 +153,9 @@ public class LotteryScrapping
                 break;
             case "sthree-sakthi":
                 searchThirdCase();
+                break;
+            case "fifty-fifty":
+                searchForthCase();
                 break;
         }
     }
@@ -287,13 +300,60 @@ public class LotteryScrapping
             System.out.println("NO Prizes :( ");
         }
     }
+
+    public static void searchForthCase() // for search in 3rd to 7th results (ff)...
+    {
+        List<Integer> third = thirdPrizeNumbers.stream().map(Integer::valueOf).collect(Collectors.toList());
+        List<Integer> forth = forthPrizeNumbers.stream().map(Integer::valueOf).collect(Collectors.toList());
+        List<Integer> fifth = fifthPrizeNumbers.stream().map(Integer::valueOf).collect(Collectors.toList());
+        List<Integer> sixth = sixthPrizeNumbers.stream().map(Integer::valueOf).collect(Collectors.toList());
+        List<Integer> seventh = seventhPrizeNumbers.stream().map(Integer::valueOf).collect(Collectors.toList());
+        boolean flag = false;
+
+        System.out.println("Prizes are : ");
+
+        for(int i = RST; i <= RED; ++i)
+        {
+            if(Collections.binarySearch(third, i) >= 0)
+            {
+                System.out.println(i + " ---> 5k");
+                flag = true;
+            }
+            else if(Collections.binarySearch(forth, i) >= 0)
+            {
+                System.out.println(i + " ---> 2k");
+                flag = true;
+            }
+            else if(Collections.binarySearch(fifth, i) >= 0)
+            {
+                System.out.println(i + " ---> 1k");
+                flag = true;
+            }
+            else if(Collections.binarySearch(sixth, i) >= 0)
+            {
+                System.out.println(i + " ---> 500");
+                flag = true;
+            }
+            else if(Collections.binarySearch(seventh, i) >= 0)
+            {
+                System.out.println(i + " ---> 100");
+                flag = true;
+            }
+        }
+
+        if(!flag)
+        {
+            System.out.println("NO Prizes :( ");
+        }
+    }
     public static void getNeededData()
     {
         Scanner Input = new Scanner(System.in);
+        boolean isFF = false;
 
         // for lottery name
         System.out.println("Choose your lottery : \n");
-        System.out.println("1) Akshaya\n2) Win Win\n3) Karunya Plus\n4) Karunya\n5) Nirmal\n6) Sthree Sakthi\nChoice : ");
+        System.out.println("1) Akshaya\n2) Win Win\n3) Karunya Plus\n4) Karunya\n5) Nirmal\n6) Sthree Sakthi\n7) Fifty Fifty\nChoice : ");
 
         int ch = Input.nextInt();
 
@@ -317,6 +377,10 @@ public class LotteryScrapping
             case 6:
                 NAME = "sthree-sakthi";
                 break;
+            case 7:
+                NAME = "fifty-fifty";
+                isFF = true;
+                break;
             default:
                 NAME = "NOT";
                 break;
@@ -333,6 +397,12 @@ public class LotteryScrapping
         CODE = Input.next();
         CODE = '-' + CODE + '-';
         CODE = CODE.toLowerCase();
+
+        // for ff
+        if(isFF)
+        {
+            CODE = CODE.substring(0, 3) + "-50-50" + CODE.substring(3);
+        }
 
         // for ranges
 
@@ -416,6 +486,10 @@ public class LotteryScrapping
                 prizeStr = h4.text();
                 for(String s : prizeStr.split("\\s"))
                 {
+                    if(isFiftyFifty && !isNumber(prizeStr))
+                    {
+                        continue;
+                    }
                     prizeNumbers.add(s);
                 }
             }
@@ -555,4 +629,17 @@ public class LotteryScrapping
 
         return result;
     }
+
+    public static boolean isNumber(String str)
+    {
+        for(int i = 0; i < str.length(); i++)
+        {
+            if(Character.isAlphabetic(str.charAt(i)))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }
